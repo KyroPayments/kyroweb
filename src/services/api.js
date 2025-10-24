@@ -39,6 +39,26 @@ apiClient.interceptors.response.use(
   }
 );
 
+// Authentication API functions
+export const authAPI = {
+  register: (userData) => apiClient.post('/auth/register', userData),
+  login: (userData) => apiClient.post('/auth/login', userData),
+};
+
+// Profile API functions
+export const profileAPI = {
+  getProfile: () => apiClient.get('/auth/profile'),
+  updateProfile: (profileData) => apiClient.put('/auth/profile', profileData),
+};
+
+// API Key API functions
+export const apiKeyAPI = {
+  getApiKeys: () => apiClient.get('/auth/api-keys'),
+  createApiKey: (keyData) => apiClient.post('/auth/api-keys', keyData),
+  updateApiKey: (id, keyData) => apiClient.put(`/auth/api-keys/${id}`, keyData),
+  deleteApiKey: (id) => apiClient.delete(`/auth/api-keys/${id}`),
+};
+
 // Payment API functions
 export const paymentAPI = {
   createPayment: (paymentData) => apiClient.post('/payments', paymentData),

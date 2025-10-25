@@ -86,6 +86,19 @@ export const networkTypeAPI = {
   getNetworkType: (id) => apiClient.get(`/network-types/${id}`),
 };
 
+// Blockchain Networks API functions
+export const blockchainNetworkAPI = {
+  listBlockchainNetworks: (params) => apiClient.get('/blockchain-networks', { params }),
+  getBlockchainNetwork: (id) => apiClient.get(`/blockchain-networks/${id}`),
+};
+
+// Crypto Tokens API functions
+export const cryptoTokenAPI = {
+  listCryptoTokens: (params) => apiClient.get('/crypto-tokens', { params }),
+  getCryptoToken: (id) => apiClient.get(`/crypto-tokens/${id}`),
+  getCryptoTokensByNetwork: (networkId) => apiClient.get(`/crypto-tokens/by-network/${networkId}`),
+};
+
 // Transaction API functions
 export const transactionAPI = {
   createTransaction: (transactionData) => apiClient.post('/transactions', transactionData),

@@ -9,26 +9,65 @@ import {
   Col,
   Alert
 } from 'react-bootstrap';
-import { paymentAPI } from '../services/api';
+import { paymentAPI, walletAPI, blockchainNetworkAPI, cryptoTokenAPI } from '../services/api';
 
 const Payments = () => {
   const [payments, setPayments] = useState([]);
+  const [wallets, setWallets] = useState([]);
+  const [blockchainNetworks, setBlockchainNetworks] = useState([]);
+  const [cryptoTokens, setCryptoTokens] = useState([]);
+  const [filteredTokens, setFilteredTokens] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [paymentForm, setPaymentForm] = useState({
     amount: '',
-    currency: 'ETH',
+    crypto_token_id: '',
     wallet_id: '',
-    merchant_id: '',
-    description: ''
+    merchant_id: '', // This will be set automatically from user authentication
+    description: '',
+    expires_at: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Fetch payments on component mount
+  // Fetch payments, wallets, blockchain networks on component mount
   useEffect(() => {
     fetchPayments();
+    fetchWallets();
+    fetchBlockchainNetworks();
   }, []);
+
+  const fetchWallets = async () => {
+    try {
+      setLoading(true);
+      const response = await walletAPI.listWallets();
+      setWallets(response.data.wallets || []);
+      
+      // If we have wallets and no wallet selected, select the first one
+      if (response.data.wallets && response.data.wallets.length > 0 && !paymentForm.wallet_id) {
+        setPaymentForm(prev => ({
+          ...prev,
+          wallet_id: response.data.wallets[0].id
+        }));
+      }
+    } catch (err) {
+      setError('Failed to fetch wallets: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchBlockchainNetworks = async () => {
+    try {
+      setLoading(true);
+      const response = await blockchainNetworkAPI.listBlockchainNetworks();
+      setBlockchainNetworks(response.data.blockchainNetworks || []);
+    } catch (err) {
+      setError('Failed to fetch blockchain networks: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchPayments = async () => {
     try {
@@ -42,12 +81,64 @@ const Payments = () => {
     }
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = async (e) => {
     const { name, value } = e.target;
-    setPaymentForm(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    // Special handling for blockchain_network_id to avoid including it in form data
+    if (name === 'blockchain_network_id') {
+      setPaymentForm(prev => ({
+        ...prev,
+        [name]: value
+      }));
+      await loadTokensForNetwork(value);
+    } else {
+      setPaymentForm(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
+    
+    // Load tokens when wallet is selected (for future use)
+    if (name === 'wallet_id') {
+      await loadTokensForWallet(value);
+    }
+  };
+  
+  const loadTokensForWallet = async (walletId) => {
+    try {
+      setLoading(true);
+      // Find the selected wallet
+      const selectedWallet = wallets.find(wallet => wallet.id === walletId);
+      if (selectedWallet) {
+        // Load all tokens for now, but in the future we could filter based on network
+        const response = await cryptoTokenAPI.listCryptoTokens();
+        setCryptoTokens(response.data.cryptoTokens || []);
+      }
+    } catch (err) {
+      setError('Failed to fetch crypto tokens: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const loadTokensForNetwork = async (networkId) => {
+    try {
+      setLoading(true);
+      const response = await cryptoTokenAPI.getCryptoTokensByNetwork(networkId);
+      setFilteredTokens(response.data.cryptoTokens || []);
+      
+      // Reset the selected token when network changes
+      setPaymentForm(prev => ({
+        ...prev,
+        crypto_token_id: '',
+        blockchain_network_id: networkId
+      }));
+    } catch (err) {
+      setError('Failed to fetch crypto tokens for network: ' + err.message);
+      setFilteredTokens([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCreatePayment = async (e) => {
@@ -55,16 +146,45 @@ const Payments = () => {
     
     try {
       setLoading(true);
-      const response = await paymentAPI.createPayment(paymentForm);
+      
+      // Get the authenticated user ID from the stored token
+      const token = localStorage.getItem('kyro_token');
+      let userId = '';
+      
+      if (token) {
+        try {
+          // Decode the JWT token to extract the user ID
+          const base64Url = token.split('.')[1];
+          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+          const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+          const decodedToken = JSON.parse(jsonPayload);
+          userId = decodedToken.userId || decodedToken.sub || decodedToken.id;
+        } catch (decodeError) {
+          // Fallback to another method if token decoding fails
+          console.warn('Could not decode JWT token:', decodeError);
+          // In a real application, you might want to call an API endpoint to get user info
+        }
+      }
+      
+      // Prepare the payment data with the authenticated user as merchant
+      // Exclude blockchain_network_id since it's only used for filtering in frontend
+      const { blockchain_network_id, ...paymentData } = paymentForm;
+      const fullPaymentData = {
+        ...paymentData,
+        merchant_id: userId, // Use the authenticated user ID as merchant ID
+      };
+      
+      const response = await paymentAPI.createPayment(fullPaymentData);
       
       setSuccess('Payment created successfully!');
       setShowModal(false);
       setPaymentForm({
         amount: '',
-        currency: 'ETH',
-        wallet_id: '',
-        merchant_id: '',
-        description: ''
+        crypto_token_id: '',
+        wallet_id: wallets.length > 0 ? wallets[0].id : '',
+        merchant_id: userId, // Pre-populate with user ID
+        description: '',
+        expires_at: ''
       });
       
       // Refresh the payments list
@@ -182,55 +302,90 @@ const Payments = () => {
               </Col>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Currency</Form.Label>
+                  <Form.Label>Wallet</Form.Label>
                   <Form.Select
-                    name="currency"
-                    value={paymentForm.currency}
+                    name="wallet_id"
+                    value={paymentForm.wallet_id}
                     onChange={handleInputChange}
                     required
                   >
-                    <option value="ETH">ETH</option>
-                    <option value="BTC">BTC</option>
-                    <option value="USDT">USDT</option>
-                    <option value="USDC">USDC</option>
-                    <option value="BNB">BNB</option>
-                    <option value="MATIC">MATIC</option>
+                    <option value="">Select a wallet</option>
+                    {wallets.map(wallet => (
+                      <option key={wallet.id} value={wallet.id}>
+                        {wallet.name} ({wallet.address.substring(0, 10)}...)
+                      </option>
+                    ))}
                   </Form.Select>
                 </Form.Group>
               </Col>
             </Row>
             
-            <Form.Group className="mb-3">
-              <Form.Label>Wallet ID</Form.Label>
-              <Form.Control
-                type="text"
-                name="wallet_id"
-                value={paymentForm.wallet_id}
-                onChange={handleInputChange}
-                required
-              />
-            </Form.Group>
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Blockchain Network</Form.Label>
+                  <Form.Select
+                    name="blockchain_network_id"
+                    value={paymentForm.blockchain_network_id || ''}
+                    onChange={handleInputChange}
+                    required
+                  >
+                    <option value="">Select a network</option>
+                    {blockchainNetworks.map(network => (
+                      <option key={network.id} value={network.id}>
+                        {network.name} ({network.symbol})
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Cryptocurrency</Form.Label>
+                  <Form.Select
+                    name="crypto_token_id"
+                    value={paymentForm.crypto_token_id}
+                    onChange={handleInputChange}
+                    required
+                    disabled={!paymentForm.blockchain_network_id}
+                  >
+                    <option value="">Select a cryptocurrency</option>
+                    {filteredTokens.map(token => (
+                      <option key={token.id} value={token.id}>
+                        {token.name} ({token.symbol})
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+            </Row>
             
-            <Form.Group className="mb-3">
-              <Form.Label>Merchant ID</Form.Label>
-              <Form.Control
-                type="text"
-                name="merchant_id"
-                value={paymentForm.merchant_id}
-                onChange={handleInputChange}
-                required
-              />
-            </Form.Group>
-            
-            <Form.Group className="mb-3">
-              <Form.Label>Description</Form.Label>
-              <Form.Control
-                type="text"
-                name="description"
-                value={paymentForm.description}
-                onChange={handleInputChange}
-              />
-            </Form.Group>
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Expiration Date</Form.Label>
+                  <Form.Control
+                    type="datetime-local"
+                    name="expires_at"
+                    value={paymentForm.expires_at}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Description</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="description"
+                    value={paymentForm.description}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
           </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={() => setShowModal(false)}>

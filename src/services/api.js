@@ -77,7 +77,13 @@ export const walletAPI = {
   depositFunds: (id, depositData) => apiClient.post(`/wallets/${id}/deposit`, depositData),
   withdrawFunds: (id, withdrawData) => apiClient.post(`/wallets/${id}/withdraw`, withdrawData),
   listWallets: (params) => apiClient.get('/wallets', { params }),
-  generateAddress: (id, cryptoType) => apiClient.post(`/wallets/${id}/generate-address`, { cryptoType }),
+
+};
+
+// Network Types API functions
+export const networkTypeAPI = {
+  listNetworkTypes: (params) => apiClient.get('/network-types', { params }),
+  getNetworkType: (id) => apiClient.get(`/network-types/${id}`),
 };
 
 // Transaction API functions

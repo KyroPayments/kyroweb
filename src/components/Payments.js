@@ -233,7 +233,8 @@ const Payments = () => {
             <th>ID</th>
             <th>Amount</th>
             <th>Currency</th>
-            <th>Wallet ID</th>
+            <th>Wallet</th>
+            <th>Network</th>
             <th>Status</th>
             <th>Created At</th>
             <th>Actions</th>
@@ -245,8 +246,13 @@ const Payments = () => {
               <tr key={payment.id}>
                 <td>{payment.id}</td>
                 <td>{payment.amount}</td>
-                <td>{payment.currency}</td>
-                <td>{payment.wallet_id}</td>
+                <td>
+                  {payment.crypto_token 
+                    ? `${payment.crypto_token.name} (${payment.crypto_token.symbol})` 
+                    : payment.currency || 'N/A'}
+                </td>
+                <td>{payment.wallet ? payment.wallet.name : payment.wallet_id || 'N/A'}</td>
+                <td>{payment.blockchain_network ? payment.blockchain_network.name : 'N/A'}</td>
                 <td>
                   <span className={`badge ${
                     payment.status === 'completed' ? 'bg-success' :
@@ -271,7 +277,7 @@ const Payments = () => {
             ))
           ) : (
             <tr>
-              <td colSpan="7" className="text-center">
+              <td colSpan="8" className="text-center">
                 {loading ? 'Loading...' : 'No payments found'}
               </td>
             </tr>

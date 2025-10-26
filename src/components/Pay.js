@@ -13,6 +13,36 @@ import {
 import { useParams } from 'react-router-dom';
 import { paymentAPI } from '../services/api';
 
+// Helper function to calculate remaining time until expiration
+const calculateTimeRemaining = (expiresAt) => {
+  if (!expiresAt) return null;
+  
+  const expirationDate = new Date(expiresAt);
+  const now = new Date();
+  const diffMs = expirationDate - now;
+  
+  if (diffMs <= 0) {
+    return { timeRemaining: 'Expired', unit: '' };
+  }
+  
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffHours / 24);
+  
+  if (diffDays > 0) {
+    return { 
+      timeRemaining: diffDays, 
+      unit: diffDays === 1 ? 'day' : 'days',
+      isExpired: false 
+    };
+  } else {
+    return { 
+      timeRemaining: diffHours, 
+      unit: diffHours === 1 ? 'hour' : 'hours',
+      isExpired: false 
+    };
+  }
+};
+
 const Pay = () => {
   const { id } = useParams();
   const [payment, setPayment] = useState(null);
@@ -91,7 +121,6 @@ const Pay = () => {
             <Card.Body>
               <div className="mb-3">
                 <h5>Amount: {payment.amount} {payment.currency}</h5>
-                <p className="text-muted">({payment.crypto_token ? payment.crypto_token.name : 'N/A'})</p>
               </div>
               
               <div className="mb-3">
@@ -103,7 +132,7 @@ const Pay = () => {
               </div>
               
               <div className="mb-3">
-                <p><strong>Wallet:</strong> {payment.wallet ? payment.wallet.name : 'N/A'}</p>
+                <p><strong>Wallet:</strong> {payment.wallet ? payment.wallet.address : 'N/A'}</p>
               </div>
               
               <div className="mb-3">
@@ -124,6 +153,17 @@ const Pay = () => {
               
               <div className="mb-3">
                 <p><strong>Expires:</strong> {payment.expires_at ? new Date(payment.expires_at).toLocaleString() : 'Never'}</p>
+                {payment.expires_at && (() => {
+                  const timeRemaining = calculateTimeRemaining(payment.expires_at);
+                  return (
+                    <p>
+                      <strong>Time Remaining:</strong> 
+                      <span className={timeRemaining.isExpired === false ? '' : 'text-danger'}>
+                        {timeRemaining.timeRemaining} {timeRemaining.unit}
+                      </span>
+                    </p>
+                  );
+                })()}
               </div>
             </Card.Body>
           </Card>
@@ -142,6 +182,7 @@ const Pay = () => {
                 
                 <div className="mb-3">
                   <p>You are about to make a payment of <strong>{payment.amount} {payment.currency}</strong> on the <strong>{payment.blockchain_network ? payment.blockchain_network.name : 'N/A'}</strong> network.</p>
+                  <p> If you want to pay manually, please use the following wallet address when you make the payment: <strong>{payment.wallet ? payment.wallet.address : 'N/A'}</strong></p>
                 </div>
                 
                 <Form>

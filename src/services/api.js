@@ -63,10 +63,12 @@ export const apiKeyAPI = {
 export const paymentAPI = {
   createPayment: (paymentData) => apiClient.post('/payments', paymentData),
   getPayment: (id) => apiClient.get(`/payments/${id}`),
+  getPaymentPublic: (id) => apiClient.get(`/payments/public/${id}`),
   updatePayment: (id, paymentData) => apiClient.put(`/payments/${id}`, paymentData),
   listPayments: (params) => apiClient.get('/payments', { params }),
   cancelPayment: (id) => apiClient.delete(`/payments/${id}`),
   confirmPayment: (id) => apiClient.post(`/payments/${id}/confirm`),
+  confirmPaymentPublic: (id, data) => apiClient.post(`/payments/public/${id}/confirm`, data),
 };
 
 // Wallet API functions

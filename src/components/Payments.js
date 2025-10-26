@@ -211,6 +211,17 @@ const Payments = () => {
     }
   };
 
+  const copyPaymentLink = (paymentId) => {
+    const paymentLink = `${window.location.origin}/pay/${paymentId}`;
+    navigator.clipboard.writeText(paymentLink)
+      .then(() => {
+        setSuccess('Payment link copied to clipboard!');
+      })
+      .catch(err => {
+        setError('Failed to copy link: ' + err.message);
+      });
+  };
+
   return (
     <Container>
       <h2>Payments</h2>
@@ -264,6 +275,14 @@ const Payments = () => {
                 </td>
                 <td>{new Date(payment.created_at).toLocaleString()}</td>
                 <td>
+                  <Button 
+                    variant="outline-primary" 
+                    size="sm" 
+                    className="me-2"
+                    onClick={() => copyPaymentLink(payment.id)}
+                  >
+                    Copy Link
+                  </Button>
                   <Button 
                     variant="outline-danger" 
                     size="sm" 

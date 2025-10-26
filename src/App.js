@@ -9,6 +9,7 @@ import Register from './components/Register';
 import Login from './components/Login';
 import Profile from './components/Profile';
 import ApiKeyManager from './components/ApiKeyManager';
+import Pay from './components/Pay';
 import './App.css';
 
 function App() {
@@ -73,6 +74,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/api-keys" element={<ApiKeyManager />} />
+          <Route path="/pay/:id" element={<Pay />} />
         </Routes>
       </Container>
     </div>

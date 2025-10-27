@@ -7,9 +7,11 @@ import {
   Form, 
   Row, 
   Col,
-  Alert
+  Alert,
+  Badge
 } from 'react-bootstrap';
 import { paymentAPI, walletAPI, blockchainNetworkAPI, cryptoTokenAPI } from '../services/api';
+import { useWorkspace } from '../contexts/WorkspaceContext';
 
 const Payments = () => {
   const [payments, setPayments] = useState([]);
@@ -29,13 +31,14 @@ const Payments = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const { currentWorkspace } = useWorkspace();
 
   // Fetch payments, wallets, blockchain networks on component mount
   useEffect(() => {
     fetchPayments();
     fetchWallets();
     fetchBlockchainNetworks();
-  }, []);
+  }, [currentWorkspace]); // Add currentWorkspace to dependency array
 
   const fetchWallets = async () => {
     try {
@@ -72,6 +75,8 @@ const Payments = () => {
   const fetchPayments = async () => {
     try {
       setLoading(true);
+      // The backend should automatically filter based on the user's current workspace
+      // because the workspace is attached to the user's session via middleware
       const response = await paymentAPI.listPayments();
       setPayments(response.data.payments || []);
     } catch (err) {
@@ -225,9 +230,12 @@ const Payments = () => {
   return (
     <Container>
       <h2>Payments</h2>
+      <p className="text-muted">Showing payments in <strong>{currentWorkspace.toUpperCase()}</strong> workspace</p>
       
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h3>Manage Payments</h3>
+        <div>
+          <h3>Manage Payments</h3>
+        </div>
         <Button variant="primary" onClick={() => setShowModal(true)}>
           Create Payment
         </Button>

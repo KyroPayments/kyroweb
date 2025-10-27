@@ -11,6 +11,7 @@ import {
   Badge
 } from 'react-bootstrap';
 import { transactionAPI } from '../services/api';
+import { useWorkspace } from '../contexts/WorkspaceContext';
 
 const Transactions = () => {
   const [transactions, setTransactions] = useState([]);
@@ -25,11 +26,12 @@ const Transactions = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const { currentWorkspace } = useWorkspace();
 
   // Fetch transactions on component mount
   useEffect(() => {
     fetchTransactions();
-  }, []);
+  }, [currentWorkspace]); // Add currentWorkspace to dependency array
 
   const fetchTransactions = async () => {
     try {
@@ -107,9 +109,12 @@ const Transactions = () => {
   return (
     <Container>
       <h2>Transactions</h2>
+      <p className="text-muted">Showing transactions in <strong>{currentWorkspace.toUpperCase()}</strong> workspace</p>
       
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h3>Manage Transactions</h3>
+        <div>
+          <h3>Manage Transactions</h3>
+        </div>
         <Button variant="primary" onClick={() => setShowModal(true)}>
           Create Transaction
         </Button>

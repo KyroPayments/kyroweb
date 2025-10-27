@@ -180,6 +180,17 @@ const Pay = () => {
                 {error && <Alert variant="danger">{error}</Alert>}
                 {success && <Alert variant="success">{success}</Alert>}
                 
+                {/* Warning message for testnet payments only */}
+                {payment && payment.workspace === 'testnet' && (
+                  <Alert variant="warning">
+                    <h5><i className="fas fa-exclamation-triangle"></i> Testnet Payment</h5>
+                    <p className="mb-0">
+                      This is a test payment on the testnet network. The tokens being used are not real and have no monetary value. 
+                      This payment is for testing purposes only.
+                    </p>
+                  </Alert>
+                )}
+                
                 <div className="mb-3">
                   <p>You are about to make a payment of <strong>{payment.amount} {payment.currency}</strong> on the <strong>{payment.blockchain_network ? payment.blockchain_network.name : 'N/A'}</strong> network.</p>
                   <p> If you want to pay manually, please use the following wallet address when you make the payment: <strong>{payment.wallet ? payment.wallet.address : 'N/A'}</strong></p>

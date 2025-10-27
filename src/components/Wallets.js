@@ -8,9 +8,11 @@ import {
   Row, 
   Col,
   Alert,
-  Card
+  Card,
+  Badge
 } from 'react-bootstrap';
 import { walletAPI, networkTypeAPI } from '../services/api';
+import { useWorkspace } from '../contexts/WorkspaceContext';
 
 const Wallets = () => {
   const [wallets, setWallets] = useState([]);
@@ -37,12 +39,13 @@ const Wallets = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const { currentWorkspace } = useWorkspace();
 
   // Fetch wallets and network types on component mount
   useEffect(() => {
     fetchWallets();
     fetchNetworkTypes();
-  }, []);
+  }, [currentWorkspace]); // Add currentWorkspace to dependency array
 
   const fetchNetworkTypes = async () => {
     try {
@@ -199,9 +202,12 @@ const Wallets = () => {
   return (
     <Container>
       <h2>Wallets</h2>
+      <p className="text-muted">Showing wallets in <strong>{currentWorkspace.toUpperCase()}</strong> workspace</p>
       
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h3>Manage Wallets</h3>
+        <div>
+          <h3>Manage Wallets</h3>
+        </div>
         <Button variant="primary" onClick={() => setShowCreateModal(true)}>
           Create Wallet
         </Button>

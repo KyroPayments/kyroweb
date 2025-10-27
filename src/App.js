@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Nav, Navbar, Button } from 'react-bootstrap';
-import { Routes, Route, Link } from 'react-router-dom';
+import { Container, Nav, Navbar, Button, Badge } from 'react-bootstrap';
+import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import Home from './components/Home';
 import Payments from './components/Payments';
 import Wallets from './components/Wallets';
@@ -10,25 +10,47 @@ import Login from './components/Login';
 import Profile from './components/Profile';
 import ApiKeyManager from './components/ApiKeyManager';
 import Pay from './components/Pay';
+import { useWorkspace } from './contexts/WorkspaceContext';
+import { profileAPI } from './services/api';
 import './App.css';
 
-function App() {
+// Component to wrap the entire app with workspace logic
+function AppContent() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { loadProfile, currentWorkspace } = useWorkspace();
 
   useEffect(() => {
     // Check authentication status when component mounts
     const token = localStorage.getItem('kyro_token');
     setIsAuthenticated(!!token);
+
+    // If authenticated, fetch user profile to load workspace
+    if (token) {
+      fetchUserProfile();
+    }
   }, []);
+
+  const fetchUserProfile = async () => {
+    try {
+      const response = await profileAPI.getProfile();
+      loadProfile(response.data.user);
+    } catch (err) {
+      console.error('Failed to fetch profile:', err);
+      // If profile fetch fails, still set as authenticated but with default workspace
+      loadProfile({ workspace: 'testnet' });
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('kyro_token');
     setIsAuthenticated(false);
+    // Reset workspace to default on logout
+    loadProfile({ workspace: 'testnet' });
     window.location.href = '/login';
   };
 
   return (
-    <div className="App">
+    <>
       <Navbar bg="dark" variant="dark" expand="lg" className="mb-4">
         <Container>
           <Navbar.Brand as={Link} to="/">Kyro</Navbar.Brand>
@@ -49,6 +71,18 @@ function App() {
             </Nav>
             
             <Nav>
+              {/* Show workspace indicator in navbar for authenticated users */}
+              {isAuthenticated && (
+                <Nav.Item className="d-flex align-items-center me-3">
+                  <Badge 
+                    bg={currentWorkspace === 'testnet' ? 'warning' : 'success'}
+                    text={currentWorkspace === 'testnet' ? 'dark' : 'light'}
+                  >
+                    {currentWorkspace.toUpperCase()}
+                  </Badge>
+                </Nav.Item>
+              )}
+              
               {!isAuthenticated ? (
                 <>
                   <Nav.Link as={Link} to="/login">Login</Nav.Link>
@@ -77,7 +111,13 @@ function App() {
           <Route path="/pay/:id" element={<Pay />} />
         </Routes>
       </Container>
-    </div>
+    </>
+  );
+}
+
+function App() {
+  return (
+    <AppContent />
   );
 }
 

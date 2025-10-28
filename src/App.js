@@ -10,6 +10,7 @@ import Login from './components/Login';
 import Profile from './components/Profile';
 import ApiKeyManager from './components/ApiKeyManager';
 import Pay from './components/Pay';
+import PaymentConfirmation from './components/PaymentConfirmation';
 import { useWorkspace } from './contexts/WorkspaceContext';
 import { profileAPI } from './services/api';
 import './App.css';
@@ -109,6 +110,7 @@ function AppContent() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/api-keys" element={<ApiKeyManager />} />
           <Route path="/pay/:id" element={<Pay />} />
+          <Route path="/payment/confirmed/:id" element={<PaymentConfirmation />} />
         </Routes>
       </Container>
     </>

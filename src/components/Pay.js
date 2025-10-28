@@ -10,7 +10,7 @@ import {
   Form,
   InputGroup
 } from 'react-bootstrap';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { paymentAPI } from '../services/api';
 
 // Helper function to calculate remaining time until expiration
@@ -45,6 +45,7 @@ const calculateTimeRemaining = (expiresAt) => {
 
 const Pay = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [payment, setPayment] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -62,6 +63,11 @@ const Pay = () => {
       setLoading(true);
       const response = await paymentAPI.getPaymentPublic(id);
       setPayment(response.data.payment);
+      
+      // If payment is already confirmed, redirect to confirmation page
+      if (response.data.payment.status === 'confirmed') {
+        navigate(`/payment/confirmed/${id}`);
+      }
     } catch (err) {
       setError('Failed to load payment details: ' + err.message);
     } finally {
@@ -82,7 +88,9 @@ const Pay = () => {
         walletAddress,
         txHash
       });
-      setSuccess('Payment confirmed successfully!');
+      
+      // Redirect to confirmation page after successful payment
+      navigate(`/payment/confirmed/${id}`);
     } catch (err) {
       setError('Failed to confirm payment: ' + err.message);
     } finally {

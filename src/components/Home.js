@@ -37,19 +37,7 @@ const Home = () => {
               </Card.Body>
             </Card>
           </Col>
-          <Col md={4} className="mb-4">
-            <Card>
-              <Card.Body>
-                <Card.Title>Transactions</Card.Title>
-                <Card.Text>
-                  Track and monitor your cryptocurrency transactions.
-                </Card.Text>
-                <Button variant="primary" href="/transactions">
-                  View Transactions
-                </Button>
-              </Card.Body>
-            </Card>
-          </Col>
+          
         </Row>
 
         <Row className="mt-5">

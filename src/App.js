@@ -76,7 +76,7 @@ function AppContent() {
                   <>
                     <Nav.Link as={Link} to="/payments">Payments</Nav.Link>
                     <Nav.Link as={Link} to="/wallets">Wallets</Nav.Link>
-                    <Nav.Link as={Link} to="/transactions">Transactions</Nav.Link>
+                    
                     <Nav.Link as={Link} to="/api-keys">API Keys</Nav.Link>
                     <Nav.Link as={Link} to="/profile">Profile</Nav.Link>
                   </>

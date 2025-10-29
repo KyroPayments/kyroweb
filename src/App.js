@@ -15,10 +15,20 @@ import { useWorkspace } from './contexts/WorkspaceContext';
 import { profileAPI } from './services/api';
 import './App.css';
 
+// Custom hook to get current location pathname
+function useCurrentPath() {
+  const location = useLocation();
+  return location.pathname;
+}
+
 // Component to wrap the entire app with workspace logic
 function AppContent() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { loadProfile, currentWorkspace } = useWorkspace();
+  const currentPath = useCurrentPath();
+
+  // Check if the current path is a public payment page
+  const isPublicPaymentPage = currentPath.startsWith('/pay/') || currentPath.startsWith('/payment/confirmed/');
 
   useEffect(() => {
     // Check authentication status when component mounts
@@ -52,52 +62,55 @@ function AppContent() {
 
   return (
     <>
-      <Navbar bg="dark" variant="dark" expand="lg" className="mb-4">
-        <Container>
-          <Navbar.Brand as={Link} to="/">Kyro</Navbar.Brand>
-          <Navbar.Toggle aria-controls="basic-navbar-nav" />
-          <Navbar.Collapse id="basic-navbar-nav">
-            <Nav className="me-auto">
-              <Nav.Link as={Link} to="/">Home</Nav.Link>
+      {/* Render navigation bar only for non-public payment pages */}
+      {!isPublicPaymentPage && (
+        <Navbar bg="dark" variant="dark" expand="lg" className="mb-4">
+          <Container>
+            <Navbar.Brand as={Link} to="/">Kyro</Navbar.Brand>
+            <Navbar.Toggle aria-controls="basic-navbar-nav" />
+            <Navbar.Collapse id="basic-navbar-nav">
+              <Nav className="me-auto">
+                <Nav.Link as={Link} to="/">Home</Nav.Link>
+                
+                {isAuthenticated && (
+                  <>
+                    <Nav.Link as={Link} to="/payments">Payments</Nav.Link>
+                    <Nav.Link as={Link} to="/wallets">Wallets</Nav.Link>
+                    <Nav.Link as={Link} to="/transactions">Transactions</Nav.Link>
+                    <Nav.Link as={Link} to="/api-keys">API Keys</Nav.Link>
+                    <Nav.Link as={Link} to="/profile">Profile</Nav.Link>
+                  </>
+                )}
+              </Nav>
               
-              {isAuthenticated && (
-                <>
-                  <Nav.Link as={Link} to="/payments">Payments</Nav.Link>
-                  <Nav.Link as={Link} to="/wallets">Wallets</Nav.Link>
-                  <Nav.Link as={Link} to="/transactions">Transactions</Nav.Link>
-                  <Nav.Link as={Link} to="/api-keys">API Keys</Nav.Link>
-                  <Nav.Link as={Link} to="/profile">Profile</Nav.Link>
-                </>
-              )}
-            </Nav>
-            
-            <Nav>
-              {/* Show workspace indicator in navbar for authenticated users */}
-              {isAuthenticated && (
-                <Nav.Item className="d-flex align-items-center me-3">
-                  <Badge 
-                    bg={currentWorkspace === 'testnet' ? 'warning' : 'success'}
-                    text={currentWorkspace === 'testnet' ? 'dark' : 'light'}
-                  >
-                    {currentWorkspace.toUpperCase()}
-                  </Badge>
-                </Nav.Item>
-              )}
-              
-              {!isAuthenticated ? (
-                <>
-                  <Nav.Link as={Link} to="/login">Login</Nav.Link>
-                  <Nav.Link as={Link} to="/register">Register</Nav.Link>
-                </>
-              ) : (
-                <Button variant="outline-light" onClick={handleLogout}>
-                  Logout
-                </Button>
-              )}
-            </Nav>
-          </Navbar.Collapse>
-        </Container>
-      </Navbar>
+              <Nav>
+                {/* Show workspace indicator in navbar for authenticated users */}
+                {isAuthenticated && (
+                  <Nav.Item className="d-flex align-items-center me-3">
+                    <Badge 
+                      bg={currentWorkspace === 'testnet' ? 'warning' : 'success'}
+                      text={currentWorkspace === 'testnet' ? 'dark' : 'light'}
+                    >
+                      {currentWorkspace.toUpperCase()}
+                    </Badge>
+                  </Nav.Item>
+                )}
+                
+                {!isAuthenticated ? (
+                  <>
+                    <Nav.Link as={Link} to="/login">Login</Nav.Link>
+                    <Nav.Link as={Link} to="/register">Register</Nav.Link>
+                  </>
+                ) : (
+                  <Button variant="outline-light" onClick={handleLogout}>
+                    Logout
+                  </Button>
+                )}
+              </Nav>
+            </Navbar.Collapse>
+          </Container>
+        </Navbar>
+      )}
 
       <Container>
         <Routes>

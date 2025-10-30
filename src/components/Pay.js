@@ -52,6 +52,17 @@ const Pay = () => {
   const [success, setSuccess] = useState('');
   const [walletAddress, setWalletAddress] = useState('');
   const [txHash, setTxHash] = useState('');
+  const [payerInfo, setPayerInfo] = useState({
+    firstname: '',
+    lastname: '',
+    email: '',
+    phone: '',
+    address: '',
+    city: '',
+    state: '',
+    zip: '',
+    country: ''
+  });
   const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
@@ -76,17 +87,18 @@ const Pay = () => {
   };
 
   const handleConfirmPayment = async () => {
-    if (!walletAddress.trim() || !txHash.trim()) {
-      setError('Please fill in both wallet address and transaction hash');
+    if (!walletAddress.trim() || !txHash.trim() || !payerInfo.firstname.trim() || !payerInfo.lastname.trim() || !payerInfo.email.trim() || !payerInfo.phone.trim() || !payerInfo.address.trim() || !payerInfo.city.trim() || !payerInfo.state.trim() || !payerInfo.zip.trim() || !payerInfo.country.trim()) {
+      setError('Please fill in all the required fields');
       return;
     }
 
     try {
       setProcessing(true);
-      // Call the public confirm payment API with verification data
+      // Call the public confirm payment API with verification data and payer information
       await paymentAPI.confirmPaymentPublic(id, {
         walletAddress,
-        txHash
+        txHash,
+        ...payerInfo
       });
       
       // Redirect to confirmation page after successful payment
@@ -96,6 +108,13 @@ const Pay = () => {
     } finally {
       setProcessing(false);
     }
+  };
+
+  const handlePayerInfoChange = (field, value) => {
+    setPayerInfo(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   if (loading) {
@@ -205,8 +224,126 @@ const Pay = () => {
                 </div>
                 
                 <Form>
+                  {/* Payer Information Section */}
+                  <div className="mb-4">
+                    <h5>Payer Information</h5>
+                    <p className="text-muted">Please provide your information to complete the payment</p>
+                    
+                    <Row>
+                      <Col md={6}>
+                        <Form.Group className="mb-3">
+                          <Form.Label>First Name *</Form.Label>
+                          <Form.Control
+                            type="text"
+                            placeholder="Enter your first name"
+                            value={payerInfo.firstname}
+                            onChange={(e) => handlePayerInfoChange('firstname', e.target.value)}
+                            disabled={processing}
+                          />
+                        </Form.Group>
+                      </Col>
+                      <Col md={6}>
+                        <Form.Group className="mb-3">
+                          <Form.Label>Last Name *</Form.Label>
+                          <Form.Control
+                            type="text"
+                            placeholder="Enter your last name"
+                            value={payerInfo.lastname}
+                            onChange={(e) => handlePayerInfoChange('lastname', e.target.value)}
+                            disabled={processing}
+                          />
+                        </Form.Group>
+                      </Col>
+                    </Row>
+                    
+                    <Form.Group className="mb-3">
+                      <Form.Label>Email *</Form.Label>
+                      <Form.Control
+                        type="email"
+                        placeholder="Enter your email address"
+                        value={payerInfo.email}
+                        onChange={(e) => handlePayerInfoChange('email', e.target.value)}
+                        disabled={processing}
+                      />
+                    </Form.Group>
+                    
+                    <Form.Group className="mb-3">
+                      <Form.Label>Phone *</Form.Label>
+                      <Form.Control
+                        type="tel"
+                        placeholder="Enter your phone number"
+                        value={payerInfo.phone}
+                        onChange={(e) => handlePayerInfoChange('phone', e.target.value)}
+                        disabled={processing}
+                      />
+                    </Form.Group>
+                    
+                    <Form.Group className="mb-3">
+                      <Form.Label>Address *</Form.Label>
+                      <Form.Control
+                        type="text"
+                        placeholder="Enter your street address"
+                        value={payerInfo.address}
+                        onChange={(e) => handlePayerInfoChange('address', e.target.value)}
+                        disabled={processing}
+                      />
+                    </Form.Group>
+                    
+                    <Row>
+                      <Col md={6}>
+                        <Form.Group className="mb-3">
+                          <Form.Label>City *</Form.Label>
+                          <Form.Control
+                            type="text"
+                            placeholder="Enter your city"
+                            value={payerInfo.city}
+                            onChange={(e) => handlePayerInfoChange('city', e.target.value)}
+                            disabled={processing}
+                          />
+                        </Form.Group>
+                      </Col>
+                      <Col md={3}>
+                        <Form.Group className="mb-3">
+                          <Form.Label>State/Province *</Form.Label>
+                          <Form.Control
+                            type="text"
+                            placeholder="State/Province"
+                            value={payerInfo.state}
+                            onChange={(e) => handlePayerInfoChange('state', e.target.value)}
+                            disabled={processing}
+                          />
+                        </Form.Group>
+                      </Col>
+                      <Col md={3}>
+                        <Form.Group className="mb-3">
+                          <Form.Label>ZIP/Postal Code *</Form.Label>
+                          <Form.Control
+                            type="text"
+                            placeholder="ZIP/Postal"
+                            value={payerInfo.zip}
+                            onChange={(e) => handlePayerInfoChange('zip', e.target.value)}
+                            disabled={processing}
+                          />
+                        </Form.Group>
+                      </Col>
+                    </Row>
+                    
+                    <Form.Group className="mb-3">
+                      <Form.Label>Country *</Form.Label>
+                      <Form.Control
+                        type="text"
+                        placeholder="Enter your country"
+                        value={payerInfo.country}
+                        onChange={(e) => handlePayerInfoChange('country', e.target.value)}
+                        disabled={processing}
+                      />
+                    </Form.Group>
+                  </div>
+                  
+                  <hr className="my-4" />
+                  
                   <Form.Group className="mb-3">
-                    <Form.Label>Your Wallet Address</Form.Label>
+                    <Form.Label>Your Wallet Address *</Form.Label>
                     <Form.Control
                       type="text"
                       placeholder="Enter your wallet address"
@@ -217,7 +354,7 @@ const Pay = () => {
                   </Form.Group>
                   
                   <Form.Group className="mb-3">
-                    <Form.Label>Transaction Hash</Form.Label>
+                    <Form.Label>Transaction Hash *</Form.Label>
                     <Form.Control
                       type="text"
                       placeholder="Enter transaction hash"

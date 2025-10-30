@@ -12,8 +12,10 @@ import {
 } from 'react-bootstrap';
 import { paymentAPI, walletAPI, blockchainNetworkAPI, cryptoTokenAPI } from '../services/api';
 import { useWorkspace } from '../contexts/WorkspaceContext';
+import { useNavigate } from 'react-router-dom';
 
 const Payments = () => {
+  const navigate = useNavigate();
   const [payments, setPayments] = useState([]);
   const [wallets, setWallets] = useState([]);
   const [blockchainNetworks, setBlockchainNetworks] = useState([]);
@@ -291,6 +293,16 @@ const Payments = () => {
                   >
                     Copy Link
                   </Button>
+                  {payment.status === 'confirmed' && (
+                    <Button 
+                      variant="outline-info" 
+                      size="sm" 
+                      className="me-2"
+                      onClick={() => navigate(`/payment/${payment.id}`)}
+                    >
+                      View Details
+                    </Button>
+                  )}
                   <Button 
                     variant="outline-danger" 
                     size="sm" 

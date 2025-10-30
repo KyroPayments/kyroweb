@@ -1,9 +1,11 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import { Container, Row, Col, Card, Form, Button, Alert } from 'react-bootstrap';
 import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { authAPI } from '../services/api';
 
 const Login = () => {
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -26,8 +28,8 @@ const Login = () => {
 
     try {
       const response = await authAPI.login(formData);
-      // Store token in localStorage
-      localStorage.setItem('kyro_token', response.data.token);
+      // Use AuthContext to handle login
+      login(response.data.token);
       
       // Redirect to dashboard after successful login
       navigate('/');

@@ -1,4 +1,6 @@
 import axios from 'axios';
+import tokenManager from './tokenManager';
+import { handleUnauthorized } from './authHandler';
 
 // Base API configuration
 const API_BASE_URL = process.env.REACT_APP_KYRO_API_URL || 'http://localhost:3000/api';
@@ -15,7 +17,7 @@ const apiClient = axios.create({
 // Request interceptor to add auth token if available
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('kyro_token');
+    const token = tokenManager.getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -31,9 +33,7 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Handle unauthorized access
-      localStorage.removeItem('kyro_token');
-      window.location.href = '/login';
+      handleUnauthorized();
     }
     return Promise.reject(error);
   }

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Nav, Navbar, Button, Badge } from 'react-bootstrap';
-import { Routes, Route, Link, useLocation } from 'react-router-dom';
+import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { setUnauthorizedCallback } from './services/authHandler';
 import Home from './components/Home';
 import Payments from './components/Payments';
 import Wallets from './components/Wallets';
@@ -25,23 +27,44 @@ function useCurrentPath() {
 
 // Component to wrap the entire app with workspace logic
 function AppContent() {
+  const { token, login, logout } = useAuth();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { loadProfile, currentWorkspace } = useWorkspace();
+  const navigate = useNavigate();
   const currentPath = useCurrentPath();
+
+  // Handle unauthorized event (triggered by API interceptor)
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      logout(); // This will navigate to login
+    };
+
+    window.addEventListener('unauthorized', handleUnauthorized);
+    
+    return () => {
+      window.removeEventListener('unauthorized', handleUnauthorized);
+    };
+  }, [logout]);
+
+  // Set up unauthorized callback for API errors
+  useEffect(() => {
+    setUnauthorizedCallback(() => {
+      // This is now handled by the event listener
+    });
+  }, []);
 
   // Check if the current path is a public payment page
   const isPublicPaymentPage = currentPath.startsWith('/pay/') || currentPath.startsWith('/payment/confirmed/');
 
   useEffect(() => {
     // Check authentication status when component mounts
-    const token = localStorage.getItem('kyro_token');
     setIsAuthenticated(!!token);
 
     // If authenticated, fetch user profile to load workspace
     if (token) {
       fetchUserProfile();
     }
-  }, []);
+  }, [token]);
 
   const fetchUserProfile = async () => {
     try {
@@ -55,11 +78,7 @@ function AppContent() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('kyro_token');
-    setIsAuthenticated(false);
-    // Reset workspace to default on logout
-    loadProfile({ workspace: 'testnet' });
-    window.location.href = '/login';
+    logout();
   };
 
   return (
@@ -136,7 +155,9 @@ function AppContent() {
 
 function App() {
   return (
-    <AppContent />
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 

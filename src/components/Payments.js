@@ -10,12 +10,14 @@ import {
   Alert,
   Badge
 } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { paymentAPI, walletAPI, blockchainNetworkAPI, cryptoTokenAPI } from '../services/api';
 import { useWorkspace } from '../contexts/WorkspaceContext';
-import { useNavigate } from 'react-router-dom';
 
 const Payments = () => {
   const navigate = useNavigate();
+  const { token } = useAuth();
   const [payments, setPayments] = useState([]);
   const [wallets, setWallets] = useState([]);
   const [blockchainNetworks, setBlockchainNetworks] = useState([]);
@@ -154,8 +156,7 @@ const Payments = () => {
     try {
       setLoading(true);
       
-      // Get the authenticated user ID from the stored token
-      const token = localStorage.getItem('kyro_token');
+      // Get the authenticated user ID from the token in AuthContext
       let userId = '';
       
       if (token) {

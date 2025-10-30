@@ -11,10 +11,12 @@ import {
   Card,
   Badge
 } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 import { walletAPI, networkTypeAPI } from '../services/api';
 import { useWorkspace } from '../contexts/WorkspaceContext';
 
 const Wallets = () => {
+  const navigate = useNavigate();
   const [wallets, setWallets] = useState([]);
   const [networkTypes, setNetworkTypes] = useState([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -188,8 +190,8 @@ const Wallets = () => {
   const handleGetBalance = async (id) => {
     try {
       setLoading(true);
-      const response = await walletAPI.getBalance(id);
-      alert(`Balance: ${response.data.balance} ${response.data.network_type || ''}`);
+      // Navigate to the balance details page instead of showing an alert
+      navigate(`/wallet/${id}/balance-details`);
     } catch (err) {
       setError('Failed to get balance: ' + err.message);
     } finally {

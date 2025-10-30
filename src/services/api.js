@@ -76,6 +76,7 @@ export const walletAPI = {
   createWallet: (walletData) => apiClient.post('/wallets', walletData),
   getWallet: (id) => apiClient.get(`/wallets/${id}`),
   getBalance: (id) => apiClient.get(`/wallets/${id}/balance`),
+  getBalanceDetails: (id) => apiClient.get(`/wallets/${id}/balance-details`),
   depositFunds: (id, depositData) => apiClient.post(`/wallets/${id}/deposit`, depositData),
   withdrawFunds: (id, withdrawData) => apiClient.post(`/wallets/${id}/withdraw`, withdrawData),
   listWallets: (params) => apiClient.get('/wallets', { params }),

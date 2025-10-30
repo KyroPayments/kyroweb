@@ -12,6 +12,7 @@ import ApiKeyManager from './components/ApiKeyManager';
 import Pay from './components/Pay';
 import PaymentConfirmation from './components/PaymentConfirmation';
 import PaymentDetails from './components/PaymentDetails';
+import BalanceDetails from './components/BalanceDetails';
 import { useWorkspace } from './contexts/WorkspaceContext';
 import { profileAPI } from './services/api';
 import './App.css';
@@ -126,6 +127,7 @@ function AppContent() {
           <Route path="/pay/:id" element={<Pay />} />
           <Route path="/payment/confirmed/:id" element={<PaymentConfirmation />} />
           <Route path="/payment/:id" element={<PaymentDetails />} />
+          <Route path="/wallet/:id/balance-details" element={<BalanceDetails />} />
         </Routes>
       </Container>
     </>

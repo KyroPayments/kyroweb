@@ -367,28 +367,40 @@ const Pay = () => {
                     </Form.Text>
                   </Form.Group>
                   
-                  <Button 
-                    variant="success" 
-                    size="lg" 
-                    className="w-100"
-                    onClick={handleConfirmPayment}
-                    disabled={processing}
-                  >
-                    {processing ? (
-                      <>
-                        <Spinner
-                          as="span"
-                          animation="border"
+                  <div className="d-grid gap-2">
+                    <Button 
+                      variant="success" 
+                      size="lg"
+                      onClick={handleConfirmPayment}
+                      disabled={processing}
+                    >
+                      {processing ? (
+                        <>
+                          <Spinner
+                            as="span"
+                            animation="border"
+                            size="sm"
+                            role="status"
+                            className="me-2"
+                          />
+                          Processing...
+                        </>
+                      ) : (
+                        'Confirm Payment'
+                      )}
+                    </Button>
+                    {payment.cancel_url && (
+                      <div className="mt-2">
+                        <Button 
+                          variant="danger" 
                           size="sm"
-                          role="status"
-                          className="me-2"
-                        />
-                        Processing...
-                      </>
-                    ) : (
-                      'Confirm Payment'
+                          onClick={() => window.open(payment.cancel_url, '_self')}
+                        >
+                          Cancel Payment
+                        </Button>
+                      </div>
                     )}
-                  </Button>
+                  </div>
                 </Form>
               </Card.Body>
             </Card>

@@ -30,7 +30,9 @@ const Payments = () => {
     wallet_id: '',
     merchant_id: '', // This will be set automatically from user authentication
     description: '',
-    expires_at: ''
+    expires_at: '',
+    callback_url: '',
+    cancel_url: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -192,7 +194,9 @@ const Payments = () => {
         wallet_id: wallets.length > 0 ? wallets[0].id : '',
         merchant_id: userId, // Pre-populate with user ID
         description: '',
-        expires_at: ''
+        expires_at: '',
+        callback_url: '',
+        cancel_url: ''
       });
       
       // Refresh the payments list
@@ -429,6 +433,39 @@ const Payments = () => {
                     onChange={handleInputChange}
                     required
                   />
+                </Form.Group>
+              </Col>
+            </Row>
+            
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Callback URL</Form.Label>
+                  <Form.Control
+                    type="url"
+                    name="callback_url"
+                    value={paymentForm.callback_url}
+                    onChange={handleInputChange}
+                    placeholder="https://your-site.com/webhook/callback"
+                  />
+                  <Form.Text className="text-muted">
+                    URL to receive payment confirmation notification
+                  </Form.Text>
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Cancel URL</Form.Label>
+                  <Form.Control
+                    type="url"
+                    name="cancel_url"
+                    value={paymentForm.cancel_url}
+                    onChange={handleInputChange}
+                    placeholder="https://your-site.com/cancel"
+                  />
+                  <Form.Text className="text-muted">
+                    URL to redirect if payment is cancelled
+                  </Form.Text>
                 </Form.Group>
               </Col>
             </Row>

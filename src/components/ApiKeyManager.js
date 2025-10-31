@@ -100,6 +100,19 @@ const ApiKeyManager = () => {
 
           {error && <Alert variant="danger">{error}</Alert>}
           {success && <Alert variant="success">{success}</Alert>}
+          
+          {/* Alert with documentation link */}
+          <Alert variant="info" className="mb-4">
+            <p className="mb-1"><strong>API Documentation:</strong> You can review the API documentation and details at:</p>
+            <a 
+              href={process.env.REACT_APP_KYRO_API_SWAGGER_URL || '/api-docs'} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="alert-link"
+            >
+              {process.env.REACT_APP_KYRO_API_SWAGGER_URL || 'http://localhost:3000/api-docs'}
+            </a>
+          </Alert>
 
           <Card>
             <Card.Body>

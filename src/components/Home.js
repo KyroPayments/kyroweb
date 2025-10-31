@@ -8,10 +8,20 @@ const Home = () => {
 
   return (
     <div>
-      <header className="App-header">
+      <div className="text-center mb-4">
+           <img
+            src="/images/kyro.png"
+            alt="Kyro Payments"
+            className="img-fluid"
+            style={{ maxWidth: '250px', height: 'auto' }}
+         />
+       </div>
+      <header className="text-center">
         <h1>Welcome to Kyro</h1>
-        <p>Your crypto payment platform dashboard</p>
+        <p>Your crypto payment platform</p>
       </header>
+
+      
 
       <Container className="my-5">
       <Row className="mt-5">

@@ -1,13 +1,15 @@
 # KyroWeb - Crypto Payment Platform UI
 
-KyroWeb is a React-based web application that provides a user interface for interacting with the Kyro crypto payment platform API.
+Kyro is a service that provides a crypto payment platform API, enabling payments for your businesses.
+
+This repository contains the frontend code for the Kyro web application, which provides a user interface for interacting with the Kyro crypto payment platform API.
+The API repository can be found here: https://github.com/KyroPayments/kyro
 
 ## Features
 
 - View and manage cryptocurrency payments
 - Create and manage crypto wallets
-- Track transactions
-- Deposit and withdraw funds
+- Enable payments for your apps and customers.
 - Real-time status updates
 
 ## Prerequisites
@@ -30,6 +32,7 @@ Create a `.env` file in the root directory with the following variables:
 
 ```env
 REACT_APP_KYRO_API_URL=http://localhost:3000/api
+REACT_APP_KYRO_API_SWAGGER_URL=http://localhost:3000/api-docs
 ```
 
 ## Running the Application
@@ -55,7 +58,6 @@ npm run build
 - **Home**: Landing page with an overview of the platform
 - **Payments**: Manage cryptocurrency payments
 - **Wallets**: Create and manage crypto wallets
-- **Transactions**: Track and monitor transactions
 
 ## API Integration
 

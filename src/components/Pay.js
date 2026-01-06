@@ -74,7 +74,7 @@ const Pay = () => {
       setLoading(true);
       const response = await paymentAPI.getPaymentPublic(id);
       setPayment(response.data.payment);
-      
+
       // If payment is already confirmed, redirect to confirmation page
       if (response.data.payment.status === 'confirmed') {
         navigate(`/payment/confirmed/${id}`);
@@ -84,6 +84,14 @@ const Pay = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Check if payment is expired
+  const isPaymentExpired = () => {
+    if (!payment || !payment.expires_at) return false;
+    const expirationDate = new Date(payment.expires_at);
+    const now = new Date();
+    return now > expirationDate;
   };
 
   const handleConfirmPayment = async () => {
@@ -199,211 +207,245 @@ const Pay = () => {
         {/* Payment Form - Right Panel */}
         <Col md={6}>
           {payment.status === 'pending' ? (
-            <Card className="shadow-sm">
-              <Card.Header className="bg-success text-white">
-                <h4>Complete Payment</h4>
-              </Card.Header>
-              <Card.Body>
-                {error && <Alert variant="danger">{error}</Alert>}
-                {success && <Alert variant="success">{success}</Alert>}
-                
-                {/* Warning message for testnet payments only */}
-                {payment && payment.workspace === 'testnet' && (
-                  <Alert variant="warning">
-                    <h5><i className="fas fa-exclamation-triangle"></i> Testnet Payment</h5>
+            isPaymentExpired() ? (
+              <Card className="shadow-sm">
+                <Card.Header className="bg-danger text-white">
+                  <h4>Payment Expired</h4>
+                </Card.Header>
+                <Card.Body>
+                  <Alert variant="danger">
+                    <h5><i className="fas fa-exclamation-circle"></i> Payment Expired</h5>
                     <p className="mb-0">
-                      This is a test payment on the testnet network. The tokens being used are not real and have no monetary value. 
-                      This payment is for testing purposes only.
+                      This payment request has expired and can no longer be processed.
+                      Please contact the merchant to create a new payment request.
                     </p>
                   </Alert>
-                )}
-                
-                <div className="mb-3">
-                  <p>You are about to make a payment of <strong>{payment.amount} {payment.currency}</strong> on the <strong>{payment.blockchain_network ? payment.blockchain_network.name : 'N/A'}</strong> network.</p>
-                  <p> If you want to pay manually, please use the following wallet address when you make the payment: <strong>{payment.wallet ? payment.wallet.address : 'N/A'}</strong></p>
-                </div>
-                
-                <Form>
-                  {/* Payer Information Section */}
-                  <div className="mb-4">
-                    <h5>Payer Information</h5>
-                    <p className="text-muted">Please provide your information to complete the payment</p>
-                    
-                    <Row>
-                      <Col md={6}>
-                        <Form.Group className="mb-3">
-                          <Form.Label>First Name *</Form.Label>
-                          <Form.Control
-                            type="text"
-                            placeholder="Enter your first name"
-                            value={payerInfo.firstname}
-                            onChange={(e) => handlePayerInfoChange('firstname', e.target.value)}
-                            disabled={processing}
-                          />
-                        </Form.Group>
-                      </Col>
-                      <Col md={6}>
-                        <Form.Group className="mb-3">
-                          <Form.Label>Last Name *</Form.Label>
-                          <Form.Control
-                            type="text"
-                            placeholder="Enter your last name"
-                            value={payerInfo.lastname}
-                            onChange={(e) => handlePayerInfoChange('lastname', e.target.value)}
-                            disabled={processing}
-                          />
-                        </Form.Group>
-                      </Col>
-                    </Row>
-                    
-                    <Form.Group className="mb-3">
-                      <Form.Label>Email *</Form.Label>
-                      <Form.Control
-                        type="email"
-                        placeholder="Enter your email address"
-                        value={payerInfo.email}
-                        onChange={(e) => handlePayerInfoChange('email', e.target.value)}
-                        disabled={processing}
-                      />
-                    </Form.Group>
-                    
-                    <Form.Group className="mb-3">
-                      <Form.Label>Phone *</Form.Label>
-                      <Form.Control
-                        type="tel"
-                        placeholder="Enter your phone number"
-                        value={payerInfo.phone}
-                        onChange={(e) => handlePayerInfoChange('phone', e.target.value)}
-                        disabled={processing}
-                      />
-                    </Form.Group>
-                    
-                    <Form.Group className="mb-3">
-                      <Form.Label>Address *</Form.Label>
-                      <Form.Control
-                        type="text"
-                        placeholder="Enter your street address"
-                        value={payerInfo.address}
-                        onChange={(e) => handlePayerInfoChange('address', e.target.value)}
-                        disabled={processing}
-                      />
-                    </Form.Group>
-                    
-                    <Row>
-                      <Col md={6}>
-                        <Form.Group className="mb-3">
-                          <Form.Label>City *</Form.Label>
-                          <Form.Control
-                            type="text"
-                            placeholder="Enter your city"
-                            value={payerInfo.city}
-                            onChange={(e) => handlePayerInfoChange('city', e.target.value)}
-                            disabled={processing}
-                          />
-                        </Form.Group>
-                      </Col>
-                      <Col md={3}>
-                        <Form.Group className="mb-3">
-                          <Form.Label>State/Province *</Form.Label>
-                          <Form.Control
-                            type="text"
-                            placeholder="State/Province"
-                            value={payerInfo.state}
-                            onChange={(e) => handlePayerInfoChange('state', e.target.value)}
-                            disabled={processing}
-                          />
-                        </Form.Group>
-                      </Col>
-                      <Col md={3}>
-                        <Form.Group className="mb-3">
-                          <Form.Label>ZIP/Postal Code *</Form.Label>
-                          <Form.Control
-                            type="text"
-                            placeholder="ZIP/Postal"
-                            value={payerInfo.zip}
-                            onChange={(e) => handlePayerInfoChange('zip', e.target.value)}
-                            disabled={processing}
-                          />
-                        </Form.Group>
-                      </Col>
-                    </Row>
-                    
-                    <Form.Group className="mb-3">
-                      <Form.Label>Country *</Form.Label>
-                      <Form.Control
-                        type="text"
-                        placeholder="Enter your country"
-                        value={payerInfo.country}
-                        onChange={(e) => handlePayerInfoChange('country', e.target.value)}
-                        disabled={processing}
-                      />
-                    </Form.Group>
+
+                  <div className="mb-3">
+                    <p>You are about to make a payment of <strong>{payment.amount} {payment.currency}</strong> on the <strong>{payment.blockchain_network ? payment.blockchain_network.name : 'N/A'}</strong> network.</p>
+                    <p> If you want to pay manually, please use the following wallet address when you make the payment: <strong>{payment.wallet ? payment.wallet.address : 'N/A'}</strong></p>
                   </div>
-                  
-                  <hr className="my-4" />
-                  
-                  <Form.Group className="mb-3">
-                    <Form.Label>Your Wallet Address *</Form.Label>
-                    <Form.Control
-                      type="text"
-                      placeholder="Enter your wallet address"
-                      value={walletAddress}
-                      onChange={(e) => setWalletAddress(e.target.value)}
-                      disabled={processing}
-                    />
-                  </Form.Group>
-                  
-                  <Form.Group className="mb-3">
-                    <Form.Label>Transaction Hash *</Form.Label>
-                    <Form.Control
-                      type="text"
-                      placeholder="Enter transaction hash"
-                      value={txHash}
-                      onChange={(e) => setTxHash(e.target.value)}
-                      disabled={processing}
-                    />
-                    <Form.Text className="text-muted">
-                      Transaction hash from the blockchain network
-                    </Form.Text>
-                  </Form.Group>
-                  
+
                   <div className="d-grid gap-2">
-                    <Button 
-                      variant="success" 
-                      size="lg"
-                      onClick={handleConfirmPayment}
-                      disabled={processing}
-                    >
-                      {processing ? (
-                        <>
-                          <Spinner
-                            as="span"
-                            animation="border"
-                            size="sm"
-                            role="status"
-                            className="me-2"
-                          />
-                          Processing...
-                        </>
-                      ) : (
-                        'Confirm Payment'
-                      )}
-                    </Button>
                     {payment.cancel_url && (
-                      <div className="mt-2">
-                        <Button 
-                          variant="danger" 
-                          size="sm"
-                          onClick={() => window.open(payment.cancel_url, '_self')}
-                        >
-                          Cancel Payment
-                        </Button>
-                      </div>
+                      <Button
+                        variant="secondary"
+                        size="lg"
+                        onClick={() => window.open(payment.cancel_url, '_self')}
+                      >
+                        Return to Merchant
+                      </Button>
                     )}
                   </div>
-                </Form>
-              </Card.Body>
-            </Card>
+                </Card.Body>
+              </Card>
+            ) : (
+              <Card className="shadow-sm">
+                <Card.Header className="bg-success text-white">
+                  <h4>Complete Payment</h4>
+                </Card.Header>
+                <Card.Body>
+                  {error && <Alert variant="danger">{error}</Alert>}
+                  {success && <Alert variant="success">{success}</Alert>}
+
+                  {/* Warning message for testnet payments only */}
+                  {payment && payment.workspace === 'testnet' && (
+                    <Alert variant="warning">
+                      <h5><i className="fas fa-exclamation-triangle"></i> Testnet Payment</h5>
+                      <p className="mb-0">
+                        This is a test payment on the testnet network. The tokens being used are not real and have no monetary value.
+                        This payment is for testing purposes only.
+                      </p>
+                    </Alert>
+                  )}
+
+                  <div className="mb-3">
+                    <p>You are about to make a payment of <strong>{payment.amount} {payment.currency}</strong> on the <strong>{payment.blockchain_network ? payment.blockchain_network.name : 'N/A'}</strong> network.</p>
+                    <p> If you want to pay manually, please use the following wallet address when you make the payment: <strong>{payment.wallet ? payment.wallet.address : 'N/A'}</strong></p>
+                  </div>
+
+                  <Form>
+                    {/* Payer Information Section */}
+                    <div className="mb-4">
+                      <h5>Payer Information</h5>
+                      <p className="text-muted">Please provide your information to complete the payment</p>
+
+                      <Row>
+                        <Col md={6}>
+                          <Form.Group className="mb-3">
+                            <Form.Label>First Name *</Form.Label>
+                            <Form.Control
+                              type="text"
+                              placeholder="Enter your first name"
+                              value={payerInfo.firstname}
+                              onChange={(e) => handlePayerInfoChange('firstname', e.target.value)}
+                              disabled={processing}
+                            />
+                          </Form.Group>
+                        </Col>
+                        <Col md={6}>
+                          <Form.Group className="mb-3">
+                            <Form.Label>Last Name *</Form.Label>
+                            <Form.Control
+                              type="text"
+                              placeholder="Enter your last name"
+                              value={payerInfo.lastname}
+                              onChange={(e) => handlePayerInfoChange('lastname', e.target.value)}
+                              disabled={processing}
+                            />
+                          </Form.Group>
+                        </Col>
+                      </Row>
+
+                      <Form.Group className="mb-3">
+                        <Form.Label>Email *</Form.Label>
+                        <Form.Control
+                          type="email"
+                          placeholder="Enter your email address"
+                          value={payerInfo.email}
+                          onChange={(e) => handlePayerInfoChange('email', e.target.value)}
+                          disabled={processing}
+                        />
+                      </Form.Group>
+
+                      <Form.Group className="mb-3">
+                        <Form.Label>Phone *</Form.Label>
+                        <Form.Control
+                          type="tel"
+                          placeholder="Enter your phone number"
+                          value={payerInfo.phone}
+                          onChange={(e) => handlePayerInfoChange('phone', e.target.value)}
+                          disabled={processing}
+                        />
+                      </Form.Group>
+
+                      <Form.Group className="mb-3">
+                        <Form.Label>Address *</Form.Label>
+                        <Form.Control
+                          type="text"
+                          placeholder="Enter your street address"
+                          value={payerInfo.address}
+                          onChange={(e) => handlePayerInfoChange('address', e.target.value)}
+                          disabled={processing}
+                        />
+                      </Form.Group>
+
+                      <Row>
+                        <Col md={6}>
+                          <Form.Group className="mb-3">
+                            <Form.Label>City *</Form.Label>
+                            <Form.Control
+                              type="text"
+                              placeholder="Enter your city"
+                              value={payerInfo.city}
+                              onChange={(e) => handlePayerInfoChange('city', e.target.value)}
+                              disabled={processing}
+                            />
+                          </Form.Group>
+                        </Col>
+                        <Col md={3}>
+                          <Form.Group className="mb-3">
+                            <Form.Label>State/Province *</Form.Label>
+                            <Form.Control
+                              type="text"
+                              placeholder="State/Province"
+                              value={payerInfo.state}
+                              onChange={(e) => handlePayerInfoChange('state', e.target.value)}
+                              disabled={processing}
+                            />
+                          </Form.Group>
+                        </Col>
+                        <Col md={3}>
+                          <Form.Group className="mb-3">
+                            <Form.Label>ZIP/Postal Code *</Form.Label>
+                            <Form.Control
+                              type="text"
+                              placeholder="ZIP/Postal"
+                              value={payerInfo.zip}
+                              onChange={(e) => handlePayerInfoChange('zip', e.target.value)}
+                              disabled={processing}
+                            />
+                          </Form.Group>
+                        </Col>
+                      </Row>
+
+                      <Form.Group className="mb-3">
+                        <Form.Label>Country *</Form.Label>
+                        <Form.Control
+                          type="text"
+                          placeholder="Enter your country"
+                          value={payerInfo.country}
+                          onChange={(e) => handlePayerInfoChange('country', e.target.value)}
+                          disabled={processing}
+                        />
+                      </Form.Group>
+                    </div>
+
+                    <hr className="my-4" />
+
+                    <Form.Group className="mb-3">
+                      <Form.Label>Your Wallet Address *</Form.Label>
+                      <Form.Control
+                        type="text"
+                        placeholder="Enter your wallet address"
+                        value={walletAddress}
+                        onChange={(e) => setWalletAddress(e.target.value)}
+                        disabled={processing}
+                      />
+                    </Form.Group>
+
+                    <Form.Group className="mb-3">
+                      <Form.Label>Transaction Hash *</Form.Label>
+                      <Form.Control
+                        type="text"
+                        placeholder="Enter transaction hash"
+                        value={txHash}
+                        onChange={(e) => setTxHash(e.target.value)}
+                        disabled={processing}
+                      />
+                      <Form.Text className="text-muted">
+                        Transaction hash from the blockchain network
+                      </Form.Text>
+                    </Form.Group>
+
+                    <div className="d-grid gap-2">
+                      <Button
+                        variant="success"
+                        size="lg"
+                        onClick={handleConfirmPayment}
+                        disabled={processing}
+                      >
+                        {processing ? (
+                          <>
+                            <Spinner
+                              as="span"
+                              animation="border"
+                              size="sm"
+                              role="status"
+                              className="me-2"
+                            />
+                            Processing...
+                          </>
+                        ) : (
+                          'Confirm Payment'
+                        )}
+                      </Button>
+                      {payment.cancel_url && (
+                        <div className="mt-2">
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            onClick={() => window.open(payment.cancel_url, '_self')}
+                          >
+                            Cancel Payment
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </Form>
+                </Card.Body>
+              </Card>
+            )
           ) : (
             <Card className="shadow-sm">
               <Card.Header className={`text-white ${

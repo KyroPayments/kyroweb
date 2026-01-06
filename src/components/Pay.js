@@ -64,6 +64,9 @@ const Pay = () => {
     country: ''
   });
   const [processing, setProcessing] = useState(false);
+  const [metamaskConnected, setMetamaskConnected] = useState(false);
+  const [metamaskAccount, setMetamaskAccount] = useState('');
+  const [metamaskChainId, setMetamaskChainId] = useState('');
 
   useEffect(() => {
     fetchPayment();
@@ -94,6 +97,53 @@ const Pay = () => {
     return now > expirationDate;
   };
 
+  // Check if MetaMask is installed
+  const isMetaMaskInstalled = () => {
+    return typeof window.ethereum !== 'undefined';
+  };
+
+  // Connect to MetaMask
+  const connectToMetaMask = async () => {
+    if (!isMetaMaskInstalled()) {
+      setError('Please install MetaMask to use this feature.');
+      return;
+    }
+
+    try {
+      const accounts = await window.ethereum.request({
+        method: 'eth_requestAccounts',
+      });
+
+      const chainId = await window.ethereum.request({
+        method: 'eth_chainId',
+      });
+
+      setMetamaskAccount(accounts[0]);
+      setMetamaskChainId(chainId);
+      setMetamaskConnected(true);
+
+      // Automatically populate wallet address
+      setWalletAddress(accounts[0]);
+
+      setError('');
+    } catch (err) {
+      setError('Failed to connect to MetaMask: ' + err.message);
+    }
+  };
+
+  // Disconnect from MetaMask
+  const disconnectFromMetaMask = () => {
+    setMetamaskConnected(false);
+    setMetamaskAccount('');
+    setMetamaskChainId('');
+    setWalletAddress(''); // Optionally clear wallet address on disconnect
+  };
+
+  // Handle transaction hash change (for manual entry)
+  const handleTxHashChange = (e) => {
+    setTxHash(e.target.value);
+  };
+
   const handleConfirmPayment = async () => {
     if (!walletAddress.trim() || !txHash.trim() || !payerInfo.firstname.trim() || !payerInfo.lastname.trim() || !payerInfo.email.trim() || !payerInfo.phone.trim() || !payerInfo.address.trim() || !payerInfo.city.trim() || !payerInfo.state.trim() || !payerInfo.zip.trim() || !payerInfo.country.trim()) {
       setError('Please fill in all the required fields');
@@ -108,7 +158,7 @@ const Pay = () => {
         txHash,
         ...payerInfo
       });
-      
+
       // Redirect to confirmation page after successful payment
       navigate(`/payment/confirmed/${id}`);
     } catch (err) {
@@ -383,15 +433,62 @@ const Pay = () => {
 
                     <hr className="my-4" />
 
+                    {/* MetaMask Integration Section */}
+                    <div className="mb-4">
+                      <h5>Wallet Connection</h5>
+                      <p className="text-muted">Connect your MetaMask wallet or enter details manually</p>
+
+                      <div className="d-grid gap-2 mb-3">
+                        {!metamaskConnected ? (
+                          <Button
+                            variant="outline-primary"
+                            onClick={connectToMetaMask}
+                            disabled={processing}
+                          >
+                            <i className="fab fa-ethereum me-2"></i>
+                            Connect MetaMask
+                          </Button>
+                        ) : (
+                          <div className="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                            <div>
+                              <small className="text-muted">Connected Account:</small>
+                              <div className="fw-bold">
+                                {metamaskAccount ? `${metamaskAccount.substring(0, 6)}...${metamaskAccount.substring(metamaskAccount.length - 4)}` : ''}
+                              </div>
+                            </div>
+                            <Button
+                              variant="outline-secondary"
+                              size="sm"
+                              onClick={disconnectFromMetaMask}
+                              disabled={processing}
+                            >
+                              Disconnect
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
                     <Form.Group className="mb-3">
                       <Form.Label>Your Wallet Address *</Form.Label>
-                      <Form.Control
-                        type="text"
-                        placeholder="Enter your wallet address"
-                        value={walletAddress}
-                        onChange={(e) => setWalletAddress(e.target.value)}
-                        disabled={processing}
-                      />
+                      <InputGroup>
+                        <Form.Control
+                          type="text"
+                          placeholder="Enter your wallet address"
+                          value={walletAddress}
+                          onChange={(e) => setWalletAddress(e.target.value)}
+                          disabled={processing || (metamaskConnected && !isMetaMaskInstalled())}
+                        />
+                        {metamaskConnected && (
+                          <Button
+                            variant="outline-secondary"
+                            onClick={() => setWalletAddress(metamaskAccount)}
+                            disabled={processing}
+                          >
+                            Use Connected
+                          </Button>
+                        )}
+                      </InputGroup>
                     </Form.Group>
 
                     <Form.Group className="mb-3">
@@ -400,7 +497,7 @@ const Pay = () => {
                         type="text"
                         placeholder="Enter transaction hash"
                         value={txHash}
-                        onChange={(e) => setTxHash(e.target.value)}
+                        onChange={handleTxHashChange}
                         disabled={processing}
                       />
                       <Form.Text className="text-muted">
@@ -413,7 +510,7 @@ const Pay = () => {
                         variant="success"
                         size="lg"
                         onClick={handleConfirmPayment}
-                        disabled={processing}
+                        disabled={processing || !walletAddress.trim() || !txHash.trim()}
                       >
                         {processing ? (
                           <>

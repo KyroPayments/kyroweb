@@ -38,7 +38,7 @@ const Home = () => {
             <Row>
               <Col md={6}>
                 <ul className="text-start">
-                  <li>Multiple cryptocurrency support (now BTC, MUSD in Mezo network)</li>
+                  <li>Multiple cryptocurrency support (now BTC, MUSD and MNEE stablecoin)</li>
                   <li>User experience friendly to make payments</li>
                   <li>Real-time transaction monitoring and confirmations</li>
                   <li>Easy integration with existing systems via REST API</li>

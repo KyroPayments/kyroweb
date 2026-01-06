@@ -144,6 +144,145 @@ const Pay = () => {
     setTxHash(e.target.value);
   };
 
+  // Send payment via MetaMask
+  const sendPaymentViaMetaMask = async () => {
+    if (!metamaskConnected || !payment) {
+      setError('Please connect MetaMask and ensure payment details are loaded.');
+      return;
+    }
+
+    try {
+      setProcessing(true);
+
+      // Check if the connected network matches the payment network
+      const connectedChainId = await window.ethereum.request({ method: 'eth_chainId' });
+      const requiredChainId = payment.blockchain_network ? payment.blockchain_network.chain_id : null;
+
+      if (requiredChainId && connectedChainId !== requiredChainId) {
+        // Try to switch to the required network
+
+        const chainIdHex = '0x' +requiredChainId.toString(16);
+        
+        try {
+          await window.ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: chainIdHex  }],
+          });
+        } catch (switchError) {
+          
+          // If the network is not added, try to add it
+          if (switchError.code === 4902) {
+            try {
+              // Get network details from payment
+              const networkDetails = {
+                chainId: chainIdHex,
+                chainName: payment.blockchain_network?.name || 'Unknown Network',
+                nativeCurrency: {
+                  name: payment.blockchain_network?.symbol || 'ETH',
+                  symbol: payment.blockchain_network?.symbol || 'ETH',
+                  decimals: 18
+                },
+                rpcUrls: [payment.blockchain_network?.rpc_url] || [],
+              };
+
+              await window.ethereum.request({
+                method: 'wallet_addEthereumChain',
+                params: [networkDetails],
+              });
+            } catch (addError) {
+              throw new Error(`Please switch to the correct network (${payment.blockchain_network?.name || 'required network'}) in MetaMask: ${addError.message}`);
+            }
+          } else {
+            throw new Error(`Please switch to the correct network (${payment.blockchain_network?.name || 'required network'}) in MetaMask: ${switchError.message}`);
+          }
+        }
+      }
+
+      // Check if this is a token transfer or native currency transfer
+      const isTokenTransfer = payment.crypto_token && payment.crypto_token.contract_address;
+
+      let txHash;
+      //console.log("Is Token Transfer:", isTokenTransfer);
+      if (isTokenTransfer) {
+        // Handle token transfer
+        // This requires calling the token contract's transfer function
+        const tokenContractAddress = payment.crypto_token.contract_address;
+        const recipientAddress = payment.wallet ? payment.wallet.address : '';
+        const tokenDecimals = payment.crypto_token.decimals || 18;
+
+        // Calculate the amount in the token's smallest unit
+        const amountInSmallestUnit = (parseFloat(payment.amount) * Math.pow(10, tokenDecimals)).toString();
+        const hexAmount = '0x' + BigInt(amountInSmallestUnit).toString(16);
+
+        // ABI for ERC20 transfer function
+        const transferABI = [
+          {
+            "constant": false,
+            "inputs": [
+              {"name": "_to", "type": "address"},
+              {"name": "_value", "type": "uint256"}
+            ],
+            "name": "transfer",
+            "outputs": [{"name": "", "type": "bool"}],
+            "payable": false,
+            "stateMutability": "nonpayable",
+            "type": "function"
+          }
+        ];
+
+        // Encode the function call
+        const Web3 = (await import('web3')).default;
+        const web3 = new Web3(window.ethereum);
+        const contract = new web3.eth.Contract(transferABI, tokenContractAddress);
+        const encodedABI = contract.methods.transfer(recipientAddress, hexAmount).encodeABI();
+
+        // Prepare transaction parameters for token transfer
+        const transactionParameters = {
+          from: metamaskAccount, // User's MetaMask wallet address
+          to: tokenContractAddress, // Token contract address
+          data: encodedABI, // Encoded function call
+        };
+
+        // Request MetaMask to send the transaction
+        txHash = await window.ethereum.request({
+          method: 'eth_sendTransaction',
+          params: [transactionParameters],
+        });
+      } else {
+        // Handle native currency transfer (ETH, BNB, etc.)
+        // Convert payment amount based on the native currency decimals
+        const nativeCurrencyDecimals = payment.blockchain_network?.native_currency_decimals || 18;
+        const multiplier = Math.pow(10, nativeCurrencyDecimals);
+        const amountInSmallestUnit = (parseFloat(payment.amount) * multiplier).toString();
+        const hexAmount = '0x' + BigInt(Math.floor(parseFloat(amountInSmallestUnit))).toString(16);
+
+        // Prepare transaction parameters for native currency transfer
+        const transactionParameters = {
+          from: metamaskAccount, // User's MetaMask wallet address
+          to: payment.wallet ? payment.wallet.address : '', // Recipient wallet address from payment details
+          value: hexAmount, // Convert payment amount to hex of smallest unit
+        };
+
+        // Request MetaMask to send the transaction
+        txHash = await window.ethereum.request({
+          method: 'eth_sendTransaction',
+          params: [transactionParameters],
+        });
+      }
+
+      // Set the transaction hash in the form
+      setTxHash(txHash);
+
+      // Show success message
+      setSuccess('Payment sent successfully! Transaction hash has been populated.');
+      setError('');
+    } catch (err) {
+      setError('Failed to send payment via MetaMask: ' + err.message);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const handleConfirmPayment = async () => {
     if (!walletAddress.trim() || !txHash.trim() || !payerInfo.firstname.trim() || !payerInfo.lastname.trim() || !payerInfo.email.trim() || !payerInfo.phone.trim() || !payerInfo.address.trim() || !payerInfo.city.trim() || !payerInfo.state.trim() || !payerInfo.zip.trim() || !payerInfo.country.trim()) {
       setError('Please fill in all the required fields');
@@ -449,21 +588,40 @@ const Pay = () => {
                             Connect MetaMask
                           </Button>
                         ) : (
-                          <div className="d-flex justify-content-between align-items-center p-3 bg-light rounded">
-                            <div>
-                              <small className="text-muted">Connected Account:</small>
-                              <div className="fw-bold">
-                                {metamaskAccount ? `${metamaskAccount.substring(0, 6)}...${metamaskAccount.substring(metamaskAccount.length - 4)}` : ''}
+                          <div>
+                            <div className="d-flex justify-content-between align-items-center p-3 bg-light rounded mb-3">
+                              <div>
+                                <small className="text-muted">Connected Account:</small>
+                                <div className="fw-bold">
+                                  {metamaskAccount ? `${metamaskAccount.substring(0, 6)}...${metamaskAccount.substring(metamaskAccount.length - 4)}` : ''}
+                                </div>
                               </div>
+                              <Button
+                                variant="outline-secondary"
+                                size="sm"
+                                onClick={disconnectFromMetaMask}
+                                disabled={processing}
+                              >
+                                Disconnect
+                              </Button>
                             </div>
-                            <Button
-                              variant="outline-secondary"
-                              size="sm"
-                              onClick={disconnectFromMetaMask}
-                              disabled={processing}
-                            >
-                              Disconnect
-                            </Button>
+
+                            {/* Send Payment Button */}
+                            <div className="d-grid gap-2">
+                              <Button
+                                variant="success"
+                                onClick={sendPaymentViaMetaMask}
+                                disabled={processing}
+                              >
+                                <i className="fab fa-ethereum me-2"></i>
+                                Send Payment via MetaMask
+                              </Button>
+                              <small className="text-muted text-center">
+                                This will open MetaMask to confirm the transaction of {payment?.amount} {payment?.currency} to {payment?.wallet?.address ? `${payment.wallet.address.substring(0, 6)}...${payment.wallet.address.substring(payment.wallet.address.length - 4)}` : 'recipient'}.
+                                <br />
+                                Network: {payment?.blockchain_network?.name || 'Unknown'} | Token: {payment?.crypto_token?.name || payment?.currency || 'Native'}
+                              </small>
+                            </div>
                           </div>
                         )}
                       </div>
